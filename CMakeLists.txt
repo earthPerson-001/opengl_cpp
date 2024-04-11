@@ -29,6 +29,8 @@ else()
     add_executable(${PROJECT_NAME} WIN32 ${SRCS})
 endif()
 
+set(OpenGL_GL_PREFERENCE "LEGACY")
+
 find_package(OpenGL REQUIRED)
 include_directories( ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} )
 
