@@ -6,8 +6,8 @@
 #include <cmath>
 
 constexpr uint16_t N_LINES_FOR_CIRCLE = 200;
-constexpr uint16_t N_TRIANGLES_FOR_FILLED_CIRCLE = 300;
-constexpr GLfloat BACKGROUND_COLOR[4] = {0.1, 0.2, 0.3, 1.0}; // black backdroung color
+constexpr uint16_t N_TRIANGLES_FOR_FILLED_CIRCLE = 200;
+constexpr GLfloat BACKGROUND_COLOR[4] = {0.1, 0.2, 0.3, 1.0}; // black background color
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -149,7 +149,7 @@ void render_ku_logo()
     GLfloat width_for_vertical_rectangle = 0.045;
     draw_vertical_rectangle(center_for_vertical_rectangle, height_for_vertical_rectangle, width_for_vertical_rectangle, color_black);
 
-    GLfloat center_for_u[] = {center_for_vertical_rectangle[0]+2*width_for_vertical_rectangle + 0.05, center_for_vertical_rectangle[1]};
+    GLfloat center_for_u[] = {center_for_vertical_rectangle[0]+2*width_for_vertical_rectangle + (GLfloat)0.05, center_for_vertical_rectangle[1]};
     draw_rotated_u((GLfloat)(2.0 / 3.3 * height_for_vertical_rectangle), (GLfloat)(4 * width_for_vertical_rectangle), width_for_vertical_rectangle, center_for_u, color_black, -30);
 }
 
@@ -276,7 +276,9 @@ void draw_filled_circle(GLfloat center[2], GLfloat radius, GLfloat background_co
             center[0] + (radius * cos(2 * M_PI * i / N_TRIANGLES_FOR_FILLED_CIRCLE)),
             center[1] + (radius * sin(2 * M_PI * i / N_TRIANGLES_FOR_FILLED_CIRCLE)));
     }
-
+    // adding these two as the last triangle drawn was incomplete
+    glVertex2f(center[0], center[1] + radius);
+    glVertex2f(center[0], center[1]);
     glEnd();
 
     if (circle_color != nullptr)
