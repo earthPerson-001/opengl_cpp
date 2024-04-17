@@ -5,13 +5,16 @@
 #include <iostream>
 #include <cmath>
 
+#define ANIMATE 0
+
 constexpr uint16_t N_LINES_FOR_CIRCLE = 200;
 constexpr uint16_t N_TRIANGLES_FOR_FILLED_CIRCLE = 200;
+constexpr uint8_t N_CIRCLES_AROUND_LOGO = 12;
 constexpr GLfloat BACKGROUND_COLOR[4] = {0.1, 0.2, 0.3, 1.0}; // black background color
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void processInput(GLFWwindow *window);
-void render_ku_logo();
+void render_ku_logo(GLfloat center[2], GLfloat radius_big = 0.5, GLfloat radius_small = 0.4);
 void draw_hollow_triangle(GLfloat vertices[3][3], GLfloat color[3]);
 void draw_filled_triangle(GLfloat vertices[3][3], GLfloat background_color[3], GLfloat triangle_color[3] = nullptr);
 void draw_hollow_triangle_with_base_and_height(GLfloat base_width, GLfloat height, GLfloat center_x_y[2], GLfloat color[3]);
@@ -21,10 +24,26 @@ void draw_inverted_filled_triangle_with_base_and_height(GLfloat base_width, GLfl
 void draw_filled_polygon(GLfloat *vertices[], uint32_t len, uint32_t start, uint32_t end, GLfloat color[3]);
 void draw_vertical_rectangle(GLfloat center[2], GLfloat height, GLfloat width, GLfloat color[3]);
 void draw_rotated_u(GLfloat height, GLfloat width, GLfloat thickness, GLfloat center[2], GLfloat color[3], GLfloat angle);
+void draw_filled_circle_between_angles(GLfloat center[2], GLfloat radius, GLfloat background_color[3], GLfloat circle_color[3], GLfloat start_angle, GLfloat end_angle);
+void draw_hollow_circle_betweeen_angles(GLfloat center[2], GLfloat radius, GLfloat color[3], GLfloat start_angle, GLfloat end_angle);
 
 // settings
 constexpr unsigned int SCR_WIDTH = 800;
 constexpr unsigned int SCR_HEIGHT = 800;
+
+/**
+ * 
+ * Returns width and height as vector
+*/
+std::vector<int> get_resolution() {
+    const GLFWvidmode * mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+
+    int window_width = mode->width;
+    int window_height = mode->height;
+
+    return {window_width, window_height};
+}
+
 
 int main(int argc, char **argv)
 {
@@ -55,6 +74,16 @@ int main(int argc, char **argv)
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
+    GLfloat center[2] = {0.0, 0.0}; // changing center
+    GLfloat radius_big = 0.5;
+    GLfloat radius_small = 0.4;
+#if ANIMATE
+    bool moving_left = true;
+    GLfloat rotation = 0;
+#endif
+    std::vector<int> resolution_dims = get_resolution();
+    std::cout << "Display Resolution width: " << resolution_dims[0] << " height: " << resolution_dims[1] << std::endl;
+
     while (!glfwWindowShouldClose(window))
     {
         // input
@@ -63,12 +92,46 @@ int main(int argc, char **argv)
         // rendering commands here
         glClearColor(BACKGROUND_COLOR[0], BACKGROUND_COLOR[1], BACKGROUND_COLOR[2], BACKGROUND_COLOR[3]);
         glClear(GL_COLOR_BUFFER_BIT);
-
-        render_ku_logo();
+#if ANIMATE
+        glPushMatrix();
+        glTranslatef(center[0], center[1], 0);
+        glRotatef(rotation, 0, 0, 1);
+        glTranslatef(-center[0], -center[1], 0);
+#endif
+        render_ku_logo(center, radius_big, radius_small);
+#if ANIMATE
+        glPopMatrix();
+#endif
 
         // check and call events and swap the buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
+#if ANIMATE
+        if (moving_left)
+        {
+            if (center[0] >= 1 - radius_big)
+            {
+                moving_left = false;
+            }
+            else
+            {
+                center[0] = center[0] + 0.001;
+                rotation -= 0.1;
+            }
+        }
+        else
+        {
+            if (center[0] <= -1 + radius_big)
+            {
+                moving_left = true;
+            }
+            else
+            {
+                center[0] = center[0] - 0.001;
+                rotation += 0.1;
+            }
+        }
+#endif
     }
 
     glfwTerminate();
@@ -86,18 +149,41 @@ void processInput(GLFWwindow *window)
         glfwSetWindowShouldClose(window, true);
 }
 
-void render_ku_logo()
+void render_ku_logo(GLfloat center[2], GLfloat radius_big, GLfloat radius_small)
 {
-    GLfloat center[2] = {0.0, 0.0}; // center of the logo
+    GLfloat middle_circle_radius = (radius_big + radius_small) / 2.3;
+    GLfloat radius_for_red_circles = 0.23;
 
-    GLfloat radius_big = 0.5;   // radius of the bigger blue circle
-    GLfloat radius_small = 0.4; // radius of the smaller yellow circle
+    bool dynamically_allocated_center = false;
+    if (center == nullptr)
+    {
+        dynamically_allocated_center = true;
+
+        center = new GLfloat(2); // center of the logo
+        center[0] = 0.0;
+        center[1] = 0.0;
+    }
 
     GLfloat color_light_blue[3] = {169 / 255.0, 198 / 255.0, 228 / 255.0};
     GLfloat color_yellow[3] = {244 / 255.0, 232 / 255.0, 112 / 255.0};
     GLfloat color_brown_like[3] = {253 / 255.0, 174 / 255.0, 172 / 255.0};
     GLfloat color_black[3] = {0.0, 0.0, 0.0};
     GLfloat color_white[3] = {1.0, 1.0, 1.0};
+    GLfloat color_red[3] = {1.0, 0.0, 0.0};
+
+    GLfloat ctr[2];
+    GLfloat start_angle;
+    GLfloat end_angle;
+    for (uint8_t i = 0; i < N_CIRCLES_AROUND_LOGO; i++)
+    {
+        start_angle = (GLfloat)i / (GLfloat)N_CIRCLES_AROUND_LOGO * 360.0 - 30;
+        end_angle = (GLfloat)i / (GLfloat)N_CIRCLES_AROUND_LOGO * 360.0 + 30;
+
+        ctr[0] = center[0] + (middle_circle_radius * cos(i * 2 * M_PI / N_CIRCLES_AROUND_LOGO));
+        ctr[1] = center[1] + (middle_circle_radius * sin(i * 2 * M_PI / N_CIRCLES_AROUND_LOGO));
+
+        draw_filled_circle_between_angles(ctr, radius_for_red_circles, color_red, nullptr, 0, 360);
+    }
 
     GLfloat triangle_base_width = 1.75 * radius_small;
     GLfloat triangle_height = (sqrt(3) / 2.0) * triangle_base_width; // equilateral triangle
@@ -144,13 +230,18 @@ void render_ku_logo()
     draw_filled_polygon(vertices, 9, 2, 6, color_white);
     draw_filled_polygon(vertices, 9, 4, 8, color_white);
 
-    GLfloat center_for_vertical_rectangle[] = {-0.08, 0.0};
+    GLfloat center_for_vertical_rectangle[] = {center[0] - 0.08, center[1]};
     GLfloat height_for_vertical_rectangle = 0.26;
     GLfloat width_for_vertical_rectangle = 0.045;
     draw_vertical_rectangle(center_for_vertical_rectangle, height_for_vertical_rectangle, width_for_vertical_rectangle, color_black);
 
-    GLfloat center_for_u[] = {center_for_vertical_rectangle[0]+2*width_for_vertical_rectangle + (GLfloat)0.05, center_for_vertical_rectangle[1]};
+    GLfloat center_for_u[] = {center_for_vertical_rectangle[0] + 2 * width_for_vertical_rectangle + (GLfloat)0.05, center_for_vertical_rectangle[1]};
     draw_rotated_u((GLfloat)(2.0 / 3.3 * height_for_vertical_rectangle), (GLfloat)(4 * width_for_vertical_rectangle), width_for_vertical_rectangle, center_for_u, color_black, -30);
+
+    if (dynamically_allocated_center)
+    {
+        delete[] center;
+    }
 }
 
 void draw_hollow_triangle(GLfloat vertices[3][3], GLfloat color[3])
@@ -262,6 +353,45 @@ void draw_hollow_circle(GLfloat center[2], GLfloat radius, GLfloat color[3])
     glEnd();
 }
 
+void draw_hollow_circle_betweeen_angles(GLfloat center[2], GLfloat radius, GLfloat color[3], GLfloat start_angle, GLfloat end_angle)
+{
+    if (start_angle < 0 && end_angle < 0)
+    {
+        start_angle = 360 + start_angle;
+        end_angle = 360 + end_angle;
+    }
+
+    // normalizing angle from 0-360 to 0 to N_LINES_FOR_CIRCLE
+    uint16_t start_i = (start_angle / 360) * N_LINES_FOR_CIRCLE;
+    uint16_t end_i = (end_angle / 360) * N_LINES_FOR_CIRCLE;
+
+    glColor3fv(color);
+
+    glLineWidth(5);
+
+    glBegin(GL_LINE_LOOP);
+    if (start_angle < 0 && end_angle >= 0)
+    {
+
+    }
+    else if (start_angle >= 0 && end_angle < 0)
+    {
+    }
+    else
+    {
+
+        for (uint16_t i = start_i; i < end_i; i++)
+        {
+            glVertex3f(
+                center[0] + (radius * cos(2 * M_PI * i / N_LINES_FOR_CIRCLE)),
+                center[1] + (radius * sin(2 * M_PI * i / N_LINES_FOR_CIRCLE)),
+                0.0);
+        }
+    }
+
+    glEnd();
+}
+
 void draw_filled_circle(GLfloat center[2], GLfloat radius, GLfloat background_color[3], GLfloat circle_color[3])
 {
     glColor3fv(background_color);
@@ -288,6 +418,43 @@ void draw_filled_circle(GLfloat center[2], GLfloat radius, GLfloat background_co
         // draw circle
 
         draw_hollow_circle(center, radius, circle_color);
+    }
+}
+
+void draw_filled_circle_between_angles(GLfloat center[2], GLfloat radius, GLfloat background_color[3], GLfloat circle_color[3], GLfloat start_angle, GLfloat end_angle)
+{
+    glColor3fv(background_color);
+
+    if (start_angle < 0 && end_angle < 0)
+    {
+        start_angle = 360 + start_angle;
+        end_angle = 360 + end_angle;
+    }
+
+    // normalizing angle from 0-360 to 0 to N_TRIANGLES_FOR_FILLED_CIRCLE
+    uint16_t start_i = (start_angle / 360) * N_TRIANGLES_FOR_FILLED_CIRCLE;
+    uint16_t end_i = (end_angle / 360) * N_TRIANGLES_FOR_FILLED_CIRCLE;
+
+    // draw circle
+
+    glBegin(GL_TRIANGLE_FAN);
+    glVertex2f(center[0], center[1]); // the first vertex of triangle is the center of circle
+    for (uint16_t i = start_i; i < end_i; i++)
+    {
+        glVertex2f(
+            center[0] + (radius * cos(2 * M_PI * i / N_TRIANGLES_FOR_FILLED_CIRCLE)),
+            center[1] + (radius * sin(2 * M_PI * i / N_TRIANGLES_FOR_FILLED_CIRCLE)));
+    }
+    // adding these two as the last triangle drawn was incomplete
+    glVertex2f(center[0], center[1] + radius);
+    glVertex2f(center[0], center[1]);
+    glEnd();
+
+    if (circle_color != nullptr)
+    {
+        // draw circle
+
+        draw_hollow_circle_betweeen_angles(center, radius, circle_color, start_angle, end_angle);
     }
 }
 
