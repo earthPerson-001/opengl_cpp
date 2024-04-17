@@ -185,6 +185,18 @@ void render_ku_logo(GLfloat center[2], GLfloat radius_big, GLfloat radius_small)
         draw_filled_circle_between_angles(ctr, radius_for_red_circles, color_red, nullptr, 0, 360);
     }
 
+    GLfloat radius_for_lines = radius_big + 0.09;
+    glLineWidth(5);
+    for(int angle = 15; angle < 360; angle+=30) {
+        glColor3fv(color_black);
+        glBegin(GL_LINES);
+
+        glVertex2fv(center);
+        glVertex2f(radius_for_lines * cos(angle*M_PI/180), radius_for_lines *sin(angle*M_PI/180));
+
+        glEnd();
+    }
+
     GLfloat triangle_base_width = 1.75 * radius_small;
     GLfloat triangle_height = (sqrt(3) / 2.0) * triangle_base_width; // equilateral triangle
 
