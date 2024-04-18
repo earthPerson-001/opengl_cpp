@@ -23,10 +23,7 @@ if (APPLE)
     # create bundle on apple compiles
     add_executable(${PROJECT_NAME} MACOSX_BUNDLE ${SRCS} )
 else()
-    # the WIN32 is needed for Windows in order for it to look for WinMain
-    # instead of the main function. This is ignored on other systems,
-    # so it works on all platforms
-    add_executable(${PROJECT_NAME} WIN32 ${SRCS})
+    add_executable(${PROJECT_NAME} ${SRCS})
 endif()
 
 set(OpenGL_GL_PREFERENCE "LEGACY")
