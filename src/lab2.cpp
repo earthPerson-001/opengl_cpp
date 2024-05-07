@@ -173,35 +173,38 @@ void draw_historgram(uint16_t *data_id, uint16_t *frequencies, size_t len)
 
     // creating the axes
     GLfloat start_point[] = {20, 20};
-    GLfloat axes_width = SCR_WIDTH / 2 - 2 * start_point[0];
-    GLfloat axes_height = SCR_HEIGHT / 2 - 2 * start_point[1];
+    GLfloat axes_width = SCR_WIDTH - 2 * start_point[0];
+    GLfloat axes_height = SCR_HEIGHT - 2 * start_point[1];
+    GLfloat histogram_offset = 10;
 
     // drawing the axes
     draw_horizontal_line_segment(start_point, axes_width);
     draw_vertical_line_segment(start_point, axes_height);
 
     // determine the total sum of frequencies
-    uint16_t sum_frequencies = 0;
-    for(size_t i = 0; i < len; i++) {
-        sum_frequencies += frequencies[i];
+    uint16_t max_frequeycy = 0;
+    for(size_t i = 1; i < len; i++) {
+        if(frequencies[i] > max_frequeycy)
+        max_frequeycy = frequencies[i];
     }
 
     // create heights depending upon the relative frequency
     std::unique_ptr<float[]> heights = std::make_unique<float[]>(len);
     for(size_t i=0; i< len; i++) {
-        heights.get()[i] = ((float)frequencies[i] / (float)sum_frequencies) * axes_height;
+        heights.get()[i] = ((float)frequencies[i] / (float)max_frequeycy) * (axes_height - histogram_offset);
     }
 
     // dividing horizontal space into equally spaced data
-    GLfloat entry_width = axes_width / len;
+    GLfloat entry_width = (axes_width - histogram_offset) / len;
 
     glColor3fv(COLOR_BLUE);
     GLfloat height_to_plot;
-    GLfloat last_plotted[] = {start_point[0], start_point[1]}; 
+    GLfloat last_plotted[] = {start_point[0] + histogram_offset, start_point[1] + histogram_offset}; 
     for(size_t i = 0; i < len; i++) {
         height_to_plot = heights.get()[i];
+        draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE);
         draw_vertical_line_segment(last_plotted, height_to_plot, (GLfloat *)COLOR_BLUE);
-        last_plotted[1] = start_point[1] + height_to_plot;
+        last_plotted[1] = start_point[1] + height_to_plot + histogram_offset;
         draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE);
         last_plotted[0] = last_plotted[0] + entry_width;
         last_plotted[1] = last_plotted[1] - height_to_plot;
