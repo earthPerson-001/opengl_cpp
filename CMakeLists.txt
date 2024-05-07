@@ -17,7 +17,8 @@ endif()
 set(SRCS "src/main.cpp")
 
 # append lists to add source files
-# list(APPEND SRCS "src/src_1.cpp")
+list(APPEND SRCS "src/lab1.cpp")
+list(APPEND SRCS "src/lab2.cpp")
 
 if (APPLE)
     # create bundle on apple compiles
