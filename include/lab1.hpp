@@ -2,8 +2,6 @@
 
 #include <glad/glad.h>
 
-constexpr uint16_t N_LINES_FOR_CIRCLE = 200;
-constexpr uint16_t N_TRIANGLES_FOR_FILLED_CIRCLE = 200;
 constexpr uint8_t N_CIRCLES_AROUND_LOGO = 12;
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);

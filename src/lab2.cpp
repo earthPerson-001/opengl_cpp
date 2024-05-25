@@ -74,9 +74,21 @@ void draw_line_using_dda(GLfloat start_point[2], GLfloat end_point[2], GLfloat c
 /***
  * The co-ordinates provided should be window specific coordinates
  *
+ * For this method to work, both the points must either be increasing or decreasing
+ * It doesn't work if one point is increasing and other is decreasing
  */
 void draw_line_using_bla(GLfloat start_point[2], GLfloat end_point[2], GLfloat color[3] = (GLfloat *)COLOR_RED)
 {
+    /** 
+     * Picking the left or bottom point as the first point
+     * because in this algorithm, there is no mechanism to decrement
+    */
+    if(start_point[0] > end_point[0] || start_point[1] > end_point[1]) {
+        GLfloat* temp_point = start_point;
+        start_point= end_point;
+        end_point = temp_point;
+    }
+
     std::array<GLfloat, 2> normalized_start_point = device_specific_to_normalized(start_point[0], start_point[1]);
     std::array<GLfloat, 2> normalized_end_point = device_specific_to_normalized(end_point[0], end_point[1]);
 
@@ -202,13 +214,13 @@ void draw_historgram(uint16_t *data_id, uint16_t *frequencies, size_t len)
     GLfloat last_plotted[] = {start_point[0] + histogram_offset, start_point[1] + histogram_offset}; 
     for(size_t i = 0; i < len; i++) {
         height_to_plot = heights.get()[i];
-        draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE);
-        draw_vertical_line_segment(last_plotted, height_to_plot, (GLfloat *)COLOR_BLUE);
+        draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE); // below horizontal line
+        draw_vertical_line_segment(last_plotted, height_to_plot, (GLfloat *)COLOR_BLUE); // left vertical line
         last_plotted[1] = start_point[1] + height_to_plot + histogram_offset;
-        draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE);
+        draw_horizontal_line_segment(last_plotted, entry_width, (GLfloat *)COLOR_BLUE); // top horizontal line
         last_plotted[0] = last_plotted[0] + entry_width;
+        draw_vertical_line_segment(last_plotted, -height_to_plot, (GLfloat *)COLOR_BLUE); // right vertical line
         last_plotted[1] = last_plotted[1] - height_to_plot;
-        draw_vertical_line_segment(last_plotted, height_to_plot, (GLfloat *)COLOR_BLUE);
     }
 
     
@@ -216,8 +228,8 @@ void draw_historgram(uint16_t *data_id, uint16_t *frequencies, size_t len)
 
 void run_lab2()
 {
-    // GLfloat start_point[] = {SCR_WIDTH / 2, SCR_HEIGHT / 2};
-    // GLfloat end_point[] = {SCR_WIDTH / 2 + 500, SCR_WIDTH / 2 + 500};
+    GLfloat start_point[] = {SCR_WIDTH / 2, SCR_HEIGHT / 2};
+    GLfloat end_point[] = {SCR_WIDTH / 2 + 400, SCR_HEIGHT / 2 + 300};
 
     // draw_line_using_dda(start_point, end_point);
     // draw_line_using_bla(start_point, end_point);
