@@ -19,6 +19,9 @@ set(SRCS "src/main.cpp")
 # append lists to add source files
 list(APPEND SRCS "src/lab1.cpp")
 list(APPEND SRCS "src/lab2.cpp")
+list(APPEND SRCS "src/lab3.cpp")
+list(APPEND SRCS "src/lab4.cpp")
+
 
 if (APPLE)
     # create bundle on apple compiles
@@ -29,8 +32,9 @@ endif()
 
 set(OpenGL_GL_PREFERENCE "LEGACY")
 
-find_package(OpenGL REQUIRED)
-include_directories( ${OPENGL_INCLUDE_DIRS}  ${GLUT_INCLUDE_DIRS} )
+find_package(OpenGL)
+
+include_directories(${OPENGL_INCLUDE_DIRS})
 
 target_include_directories("${PROJECT_NAME}" PUBLIC "${PROJECT_BINARY_DIR}" PUBLIC include)
 

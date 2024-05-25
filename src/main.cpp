@@ -9,6 +9,9 @@
 #include "globals.hpp"
 #include "lab1.hpp"
 #include "lab2.hpp"
+#include "lab3.hpp"
+#include "lab4.hpp"
+
 
 void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
@@ -42,7 +45,7 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Lab 1", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "OpenGL Lab", NULL, NULL);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -60,6 +63,8 @@ int main(int argc, char **argv)
 
     glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
+    take_input_from_menu();
+
     while (!glfwWindowShouldClose(window))
     {
         // input
@@ -71,7 +76,7 @@ int main(int argc, char **argv)
         glClearColor(BACKGROUND_COLOR[0], BACKGROUND_COLOR[1], BACKGROUND_COLOR[2], BACKGROUND_COLOR[3]);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        run_lab2();
+        run_lab4();
 
         // check and call events and swap the buffers
         glfwSwapBuffers(window);
@@ -86,6 +91,8 @@ void processInput(GLFWwindow *window)
 {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
+    if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+        take_input_from_menu();
 }
 
 void framebuffer_size_callback(GLFWwindow *window, int width, int height)
