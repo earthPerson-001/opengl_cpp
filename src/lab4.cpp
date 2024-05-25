@@ -591,7 +591,7 @@ void take_input_from_menu()
             std::cin >> g_translate_by[0] >> g_translate_by[1];
             break;
         case 3:
-            g_current_composite_transformation = COMPOSITE_TWO_D_TRANSFORMATIONS::ROTATE_ABOUT_A_POINT;
+            g_current_composite_transformation = COMPOSITE_TWO_D_TRANSFORMATIONS::REFLECT_ABOUT_45_DEGREE_LINE;
         }
         break;
 
