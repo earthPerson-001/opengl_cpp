@@ -99,15 +99,10 @@ bool perform_2d_transformation(TWO_D_TRANSFORMATIONS transformation, GLfloat tra
         break;
 
     case SHEARING: // if both is given, shearing about both the axes is done
-        if (translate_by[0])
-        {
-            matrix_a[3] = translate_by[0];
-        }
 
-        if (translate_by[1])
-        {
-            matrix_a[1] = translate_by[1];
-        }
+        matrix_a[1] = translate_by[0]; // x' = x + shx.y
+        matrix_a[3] = translate_by[1]; // y = y + shy.x
+
         break;
     default:
         return false;
