@@ -13,6 +13,8 @@
 #include <cmath>
 #include <iostream>
 
+#include <glad/glad.h>
+
 #include "globals.hpp"
 #include "lab4.hpp"
 
@@ -38,7 +40,7 @@ enum COMPOSITE_TWO_D_TRANSFORMATIONS {
  * Returns  true on success and false on failure
  *
  */
-bool matrix_multiplication(GLfloat *A, GLfloat *B, size_t row_A, size_t column_A, size_t row_B, size_t column_B, GLfloat *out)
+static bool matrix_multiplication(GLfloat *A, GLfloat *B, size_t row_A, size_t column_A, size_t row_B, size_t column_B, GLfloat *out)
 {
     if (column_A != row_B) // cannot perform multiplication in this case
     {
@@ -587,6 +589,7 @@ void take_input_from_menu()
             break;
         case 3:
             g_current_composite_transformation = COMPOSITE_TWO_D_TRANSFORMATIONS::REFLECT_ABOUT_45_DEGREE_LINE;
+            break;
         }
         break;
 
@@ -606,6 +609,18 @@ void display_triangle(const GLfloat color[3], const GLfloat pt_A[2], const GLflo
 void run_from_given_input()
 {
     GLfloat A_prime[2], B_prime[2], C_prime[2];
+
+    // displaying the coordinate system
+    glBegin(GL_LINES);
+    glVertex2f(0, 1);
+    glVertex2f(0, -1);
+    glEnd();
+
+    glBegin(GL_LINES);
+    glVertex2f(1, 0);
+    glVertex2f(-1, 0);
+    glEnd();
+
 
     // previsous triangle
     display_triangle(COLOR_GREEN, g_point_A, g_point_B, g_point_C);
