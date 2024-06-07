@@ -21,6 +21,9 @@ list(APPEND SRCS "src/lab1.cpp")
 list(APPEND SRCS "src/lab2.cpp")
 list(APPEND SRCS "src/lab3.cpp")
 list(APPEND SRCS "src/lab4.cpp")
+list(APPEND SRCS "src/lab5.cpp")
+list(APPEND SRCS "src/lab6.cpp")
+
 
 
 if (APPLE)
@@ -40,4 +43,4 @@ target_include_directories("${PROJECT_NAME}" PUBLIC "${PROJECT_BINARY_DIR}" PUBL
 
 add_subdirectory("./lib")
 
-target_link_libraries("${PROJECT_NAME}" ${OPENGL_LIBRARIES} glfw glad)
+target_link_libraries("${PROJECT_NAME}" ${OPENGL_LIBRARIES} glfw glad glm::glm)
