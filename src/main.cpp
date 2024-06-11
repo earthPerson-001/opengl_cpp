@@ -22,6 +22,8 @@ void processInput(GLFWwindow *window);
 void framebuffer_size_callback(GLFWwindow *window, int width, int height);
 void setPerspectiveProjection(int width, int height);
 
+#define THREE_D 1
+
 /**
  * Cross-platform sleep function for C
  * @param int milliseconds
@@ -67,11 +69,13 @@ int main(int argc, char **argv)
         return -1;
     }
 
-        // Configure global OpenGL state
+#ifdef THREE_D
+    // Configure global OpenGL state
     glEnable(GL_DEPTH_TEST);
 
     // Set up the initial perspective projection
     setPerspectiveProjection(SCR_WIDTH, SCR_HEIGHT);
+#endif
 
     // take_input_from_menu();
     // lab5_setup_window({0.5, 0.5} , {-0.5, -0.5});
@@ -86,15 +90,15 @@ int main(int argc, char **argv)
         // rendering commands here
         glClearColor(BACKGROUND_COLOR[0], BACKGROUND_COLOR[1], BACKGROUND_COLOR[2], BACKGROUND_COLOR[3]);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+#ifdef THREE_D
         // Set the view and model transformations
-        glm::mat4 view = glm::lookAt(glm::vec3(3.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.1f, 0.0f, 0.0f));
+        glm::mat4 view = glm::lookAt(glm::vec3(3.0f, 2.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
         glm::mat4 model = glm::mat4(1.0f);
 
 
         glMatrixMode(GL_MODELVIEW);
         glLoadMatrixf(glm::value_ptr(view * model));
-
+#endif
         run_lab6();
 
         // check and call events and swap the buffers
