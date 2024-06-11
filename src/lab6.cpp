@@ -17,6 +17,7 @@
 #include <cmath>
 
 #include <glad/glad.h>
+#include <glm/glm.hpp>
 
 #include "lab6.hpp"
 #include "globals.hpp"
@@ -27,6 +28,7 @@ enum THREE_D_TRANSFORMATIONS
     TRANSLATION,
     ROTATION,
     SCALING,
+    SHEARING,
 };
 
 typedef struct Point3D
@@ -38,7 +40,7 @@ typedef struct Point3D
  * The vertices order are from bottom left corner, anticlockwise, first front face then back face
  *
  */
-void render_cube(const std::vector<Point3D> &vertices, const GLfloat color[3] = COLOR_RED, GLfloat line_color[3] = (GLfloat*)COLOR_BLACK)
+void render_cube(const std::vector<Point3D> &vertices, const GLfloat color[3] = COLOR_RED, GLfloat line_color[3] = (GLfloat *)COLOR_BLACK)
 {
     // the cube
     glColor3fv(color);
@@ -141,13 +143,40 @@ static bool matrix_multiplication(GLfloat *A, GLfloat *B, size_t row_A, size_t c
     return true;
 }
 
-bool perform_3d_translation(THREE_D_TRANSFORMATIONS transformation, GLfloat translation_params[3], GLfloat points[3], GLfloat ret_out[16])
+bool perform_parallel_projection(double alpha, double phi, GLfloat points[3], GLfloat ret_out[3])
+{
+    double L1 = 1 / tan(glm::radians(alpha));
+    double l1_cos_phi = L1 * cos(glm::radians(phi));
+    double l1_sin_phi = L1 * sin(glm::radians(phi));
+
+    GLfloat matrix_a[16] = {
+        1, 0, l1_cos_phi, 0,
+        0, 1, l1_sin_phi, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 1};
+
+    GLfloat matrix_b[4] = {points[0], points[1], points[2], 1};
+
+    GLfloat out[4];
+
+    bool multiply_success = matrix_multiplication(matrix_a, matrix_b, 4, 4, 4, 1, out);
+
+    ret_out[0] = out[0];
+    ret_out[1] = out[1];
+    ret_out[2] = out[2];
+
+    return multiply_success;
+}
+
+bool perform_3d_transformation(THREE_D_TRANSFORMATIONS transformation, GLfloat translation_params[3], GLfloat points[3], GLfloat ret_out[3])
 {
     GLfloat matrix_a[16] = {
         1, 0, 0, 0,
         0, 1, 0, 0,
         0, 0, 1, 0,
         0, 0, 0, 1};
+
+    double cos_theta, sin_theta;
 
     switch (transformation)
     {
@@ -162,6 +191,57 @@ bool perform_3d_translation(THREE_D_TRANSFORMATIONS transformation, GLfloat tran
         matrix_a[10] = translation_params[2];
         break;
     case THREE_D_TRANSFORMATIONS::ROTATION:
+        // x-axis rotation
+        if (translation_params[0])
+        {
+            cos_theta = cos(glm::radians(translation_params[0]));
+            sin_theta = sin(glm::radians(translation_params[0]));
+
+            matrix_a[5] = cos_theta;
+            matrix_a[6] = -sin_theta;
+            matrix_a[9] = sin_theta;
+            matrix_a[10] = cos_theta;
+        }
+
+        else if (translation_params[1])
+        {
+            cos_theta = cos(glm::radians(translation_params[1]));
+            sin_theta = sin(glm::radians(translation_params[1]));
+
+            matrix_a[0] = cos_theta;
+            matrix_a[2] = sin_theta;
+            matrix_a[8] = -sin_theta;
+            matrix_a[10] = cos_theta;
+        }
+
+        else if (translation_params[2])
+        {
+            cos_theta = cos(glm::radians(translation_params[2]));
+            sin_theta = sin(glm::radians(translation_params[2]));
+
+            matrix_a[0] = cos_theta;
+            matrix_a[1] = -sin_theta;
+            matrix_a[4] = sin_theta;
+            matrix_a[5] = cos_theta;
+        }
+
+        break;
+    case THREE_D_TRANSFORMATIONS::SHEARING:
+        if (!translation_params[0]) // if x-shear param isn't given, performing x-axis shear
+        {
+            matrix_a[4] = translation_params[0];
+            matrix_a[8] = translation_params[1];
+        }
+        else if (!translation_params[1]) // if y-shear param isn't given, performing y-axis shear
+        {
+            matrix_a[2] = translation_params[0];
+            matrix_a[8] = translation_params[1];
+        }
+        else if (!translation_params[2]) // if z-shear param isn't given, performing z-axis shear
+        {
+            matrix_a[2] = translation_params[0];
+            matrix_a[6] = translation_params[1];
+        }
         break;
     case THREE_D_TRANSFORMATIONS::NONE:
     default:
@@ -179,11 +259,11 @@ bool perform_3d_translation(THREE_D_TRANSFORMATIONS transformation, GLfloat tran
     ret_out[2] = out[2];
 
     return multiply_success;
-
 }
 
 void run_lab6()
 {
+
     // drawing the grid lines
     glColor3f(0, 1, 1);
     glBegin(GL_LINES);
@@ -199,6 +279,7 @@ void run_lab6()
     }
     glEnd();
 
+
     std::vector<Point3D> cube_vertices = {
         {-0.5, -0.5, -0.5}, {0.5, -0.5, -0.5}, {0.5, 0.5, -0.5}, {-0.5, 0.5, -0.5}, // front face
         {-0.5, -0.5, 0.5},
@@ -206,39 +287,106 @@ void run_lab6()
         {0.5, 0.5, 0.5},
         {-0.5, 0.5, 0.5}, // back face
     };
+    int max_len = cube_vertices.size();
 
     render_cube(cube_vertices);
 
-    std::vector<Point3D>  out_vertices;
+    std::vector<Point3D> translated_vertices;
 
     THREE_D_TRANSFORMATIONS transformation_type = THREE_D_TRANSFORMATIONS::TRANSLATION;
     GLfloat translate_by[3] = {1.0, -1.5, -1.5};
 
-    int max_len = cube_vertices.size();
     for (int i = 0; i < max_len; i++)
     {
         GLfloat vertex[3] = {cube_vertices[i].x, cube_vertices[i].y, cube_vertices[i].z};
         GLfloat out_vertex[3];
-        perform_3d_translation(transformation_type, translate_by, vertex, out_vertex);
+        perform_3d_transformation(transformation_type, translate_by, vertex, out_vertex);
 
-        out_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
+        translated_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
     }
 
-    render_cube(out_vertices, COLOR_GREEN, (GLfloat*)COLOR_WHITE);
+    render_cube(translated_vertices, COLOR_GREEN, (GLfloat *)COLOR_WHITE);
 
-    std::vector<Point3D>  scaling_out_vertices;
+    std::vector<Point3D> scaling_out_vertices;
 
     transformation_type = THREE_D_TRANSFORMATIONS::SCALING;
-    GLfloat scale_by[3] = {1.0, -1.5, -1.5};
+    GLfloat scale_by[3] = {1.0, 1.1, 1.2};
 
     for (int i = 0; i < max_len; i++)
     {
         GLfloat vertex[3] = {cube_vertices[i].x, cube_vertices[i].y, cube_vertices[i].z};
         GLfloat out_vertex[3];
-        perform_3d_translation(transformation_type, scale_by, vertex, out_vertex);
+        perform_3d_transformation(transformation_type, scale_by, vertex, out_vertex);
 
         scaling_out_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
     }
 
-    render_cube(scaling_out_vertices, COLOR_BLUE, (GLfloat*)COLOR_YELLOW);
+    render_cube(scaling_out_vertices, COLOR_BLUE, (GLfloat *)COLOR_YELLOW);
+
+    std::vector<Point3D> roatated_vertices;
+
+    transformation_type = THREE_D_TRANSFORMATIONS::ROTATION;
+    GLfloat rotate_by[3] = {30, 0, 0}; // rotate by 30 degress about x-axis
+
+    for (int i = 0; i < max_len; i++)
+    {
+        GLfloat vertex[3] = {translated_vertices[i].x, translated_vertices[i].y, translated_vertices[i].z};
+        GLfloat out_vertex[3];
+        perform_3d_transformation(transformation_type, rotate_by, vertex, out_vertex);
+
+        roatated_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
+    }
+
+    render_cube(roatated_vertices, COLOR_BLACK, (GLfloat *)COLOR_WHITE);
+
+    std::vector<Point3D> sheared_vertices;
+
+    transformation_type = THREE_D_TRANSFORMATIONS::SHEARING;
+    GLfloat shear_by[3] = {1.5, 1.5, 0}; // perform z-axis shear
+    for (int i = 0; i < max_len; i++)
+    {
+        GLfloat vertex[3] = {translated_vertices[i].x, translated_vertices[i].y, translated_vertices[i].z};
+        GLfloat out_vertex[3];
+        perform_3d_transformation(transformation_type, shear_by, vertex, out_vertex);
+
+        sheared_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
+    }
+
+    render_cube(sheared_vertices, COLOR_YELLOW, (GLfloat *)COLOR_RED);
+
+    std::vector<Point3D> projection_cube_vertices = {
+        {-0.5, -1.5, 0.5}, {-1.5, -0.5, 0.5}, {-1.5, -0.5, 0.5}, {-0.5, -0.5, 0.5}, // front face
+        {-0.5, -1.5, 1.5},
+        {-1.5, -1.5, 1.5},
+        {-1.5, -0.5, 1.5},
+        {-0.5, -0.5, 1.5}, // back face
+    };
+
+    render_cube(projection_cube_vertices, COLOR_RED, (GLfloat *)COLOR_YELLOW);
+
+    std::vector<Point3D> projected_vertices;
+    double alpha = 90;
+    double phi = 0;
+
+    for (int i = 0; i < max_len; i++)
+    {
+        GLfloat vertex[3] = {projection_cube_vertices[i].x, projection_cube_vertices[i].y, projection_cube_vertices[i].z};
+        GLfloat out_vertex[3];
+        perform_parallel_projection(alpha, phi, vertex, out_vertex);
+
+        projected_vertices.push_back({out_vertex[0], out_vertex[1], out_vertex[2]});
+    }
+
+
+    // plotting the projected points
+    glColor3fv(COLOR_BLACK);
+    glPointSize(20);
+    glBegin(GL_QUADS);
+    for (Point3D point : projected_vertices)
+    {
+        GLfloat vertex[3] = {point.x, point.y, point.z};
+        glVertex3fv(vertex);
+    }
+    glEnd();
+
 }
